@@ -7,7 +7,7 @@ $(function () {
     let channel = pusher.subscribe("chatting");
 
     // on click on any chat btn render the chat box
-    $(".chat-toggle").on("click", function (e) {
+    $(".single_window_chat").on("click", function (e) {
         e.preventDefault();
 
         let ele = $(this);
@@ -16,24 +16,45 @@ $(function () {
 
         let username = ele.attr("data-user");
 
+        // $('.chat_box_section').show();
+        // var chatBox = $('.chat_box_section');
+        // loadLatestMessages(chatBox, user_id)
+
+        // $(".btn-chat").attr("data-to-user", user_id);
+        // console.log(user_id + '  ' + username);
+
         cloneChatBox(user_id, username, function () {
-            let chatBox = $("#chat_box_" + user_id);
+            let chatBox = $("#chat_box_section_" + user_id);
+            loadLatestMessages(chatBox, user_id);
+            chatBox.addClass("chat-opened").slideDown("fast")
+            $(".chat-area").animate(
+                {
+                    
+                    scrollTop:
+                        $(".chat-area").offset().top +
+                        $(".chat-area").outerHeight(true),
+                        // document.body.scrollHeight
+                },
+                800,
+                "swing"
+            );
 
-            if (!chatBox.hasClass("chat-opened")) {
-                chatBox.addClass("chat-opened").slideDown("fast");
-
-                loadLatestMessages(chatBox, user_id);
-
-                chatBox.find(".chat-area").animate(
-                    {
-                        scrollTop:
-                            chatBox.find(".chat-area").offset().top +
-                            chatBox.find(".chat-area").outerHeight(true),
-                    },
-                    800,
-                    "swing"
-                );
-            }
+            // if (!chatBox.hasClass("chat-opened")) {
+            //     console.log('sc')
+            //     chatBox.addClass("chat-opened").slideDown("fast");
+            //     // loadLatestMessages(chatBox, user_id);
+            //     chatBox.find(".chat-area").animate(
+            //         {
+                        
+            //             scrollTop:
+            //                 // chatBox.find(".chat-area").offset().top +
+            //                 // chatBox.find(".chat-area").outerHeight(true),
+            //                 document.body.scrollHeight
+            //         },
+            //         800,
+            //         "swing"
+            //     );
+            // }
         });
     });
 
@@ -123,11 +144,11 @@ $(function () {
      * @param callback
      */
     function cloneChatBox(user_id, username, callback) {
-        if ($("#chat_box_" + user_id).length == 0) {
-            let cloned = $("#chat_box").clone(true);
-
+        if ($("#chat_box_section_" + user_id).length == 0) {
+            let cloned = $(".chat_box_section").clone(true);
+            console.log(cloned);
             // change cloned box id
-            cloned.attr("id", "chat_box_" + user_id);
+            cloned.attr("id", "chat_box_section_" + user_id);
 
             cloned.find(".chat-user").text(username);
 
@@ -135,7 +156,7 @@ $(function () {
 
             cloned.find("#to_user_id").val(user_id);
 
-            $("#chat-overlay").append(cloned);
+            $("#chat-overlay").html(cloned);
         }
 
         callback();
@@ -151,7 +172,7 @@ $(function () {
      */
     function loadLatestMessages(container, user_id) {
         let chat_area = container.find(".chat-area");
-
+        console.log('load')
         chat_area.html("");
 
         $.ajax({
@@ -170,8 +191,6 @@ $(function () {
             success: function (response) {
                 if (response.state == 1) {
                     response.messages.map(function (val, index) {
-                        console.log(val);
-                        console.log(chat_area);
                         $(val).appendTo(chat_area);
                     });
                 }
@@ -201,7 +220,7 @@ $(function () {
     $(".btn-chat").on("click", function (e) {
         send(
             $(this).attr("data-to-user"),
-            $("#chat_box_" + $(this).attr("data-to-user"))
+            $("#chat_box_section_" + $(this).attr("data-to-user"))
                 .find(".chat_input")
                 .val()
         );
@@ -220,7 +239,7 @@ $(function () {
      * @param message
      */
     function send(to_user, message) {
-        let chat_box = $("#chat_box_" + to_user);
+        let chat_box = $("#chat_box_section_" + to_user);
         let chat_area = chat_box.find(".chat-area");
         $.ajax({
             url: base_url + "/send",
@@ -241,15 +260,15 @@ $(function () {
                 chat_area.find(".loader").remove();
                 chat_box.find(".btn-chat").prop("disabled", true);
                 chat_box.find(".chat_input").val("");
-                chat_area.animate(
-                    {
-                        scrollTop:
-                            chat_area.offset().top +
-                            chat_area.outerHeight(true),
-                    },
-                    800,
-                    "swing"
-                );
+                // chat_area.animate(
+                //     {
+                //         scrollTop:
+                //             chat_area.offset().top +
+                //             chat_area.outerHeight(true),
+                //     },
+                //     800,
+                //     "swing"
+                // );
             },
         });
     }
@@ -259,10 +278,11 @@ $(function () {
      * @param message
      */
     function displayMessage(message) {
+        console.log(message);
         let alert_sound = document.getElementById("chat-alert-sound");
         if ($("#current_user").val() == message.from_user_id) {
             let messageLine = getMessageSenderHtml(message);
-            $("#chat_box_" + message.to_user_id)
+            $("#chat_box_section_" + message.to_user_id)
                 .find(".chat-area")
                 .append(messageLine);
         } else if ($("#current_user").val() == message.to_user_id) {
@@ -272,7 +292,7 @@ $(function () {
                 message.from_user_id,
                 message.fromUserName,
                 function () {
-                    let chatBox = $("#chat_box_" + message.from_user_id);
+                    let chatBox = $("#chat_box_section_" + message.from_user_id);
                     if (!chatBox.hasClass("chat-opened")) {
                         chatBox.addClass("chat-opened").slideDown("fast");
                         loadLatestMessages(chatBox, message.from_user_id);
@@ -290,7 +310,7 @@ $(function () {
                     } else {
                         let messageLine = getMessageReceiverHtml(message);
                         // append the message for the receiver user
-                        $("#chat_box_" + message.from_user_id)
+                        $("#chat_box_section_" + message.from_user_id)
                             .find(".chat-area")
                             .append(messageLine);
                     }
@@ -304,8 +324,13 @@ $(function () {
     // that's already loaded on the chat box
     let lastScrollTop = 0;
     $(".chat-area").on("scroll", function (e) {
+        console.log('scroll');
         let st = $(this).scrollTop();
         if (st < lastScrollTop) {
+            console.log($(this).parents(".chat-opened").find("#to_user_id").val());
+            console.log($(this)
+            .find(".msg_container:first-child")
+            .attr("data-message-id"));
             fetchOldMessages(
                 $(this).parents(".chat-opened").find("#to_user_id").val(),
                 $(this)
@@ -329,7 +354,7 @@ $(function () {
      * @param old_message_id
      */
     function fetchOldMessages(to_user, old_message_id) {
-        let chat_box = $("#chat_box_" + to_user);
+        let chat_box = $("#chat_box_section_" + to_user);
         let chat_area = chat_box.find(".chat-area");
         $.ajax({
             url: base_url + "/fetch-old-messages",
@@ -354,26 +379,26 @@ $(function () {
     function displayOldMessages(data) {
         if (data.data.length > 0) {
             data.data.map(function (val, index) {
-                $("#chat_box_" + data.to_user)
+                $("#chat_box_section_" + data.to_user)
                     .find(".chat-area")
                     .prepend(val);
             });
         }
     }
 
-    // on click on any chat
-    $(".single_window_chat").on("click", function (e) {
-        e.preventDefault();
+    // // on click on any chat
+    // $(".single_window_chat").on("click", function (e) {
+    //     e.preventDefault();
 
-        let ele = $(this);
+    //     let ele = $(this);
 
-        let user_id = ele.attr("data-id");
+    //     let user_id = ele.attr("data-id");
 
-        let username = ele.attr("data-user");
+    //     let username = ele.attr("data-user");
 
-        $('.chat_box_section').show();
+    //     $('.chat_box_section').show();
 
-        let chatBox = $("#chat_box_section" + user_id);
-        loadLatestMessages(chatBox, user_id);
-    });
+    //     let chatBox = $("#chat_box_section" + user_id);
+    //     loadLatestMessages(chatBox, user_id);
+    // });
 });
